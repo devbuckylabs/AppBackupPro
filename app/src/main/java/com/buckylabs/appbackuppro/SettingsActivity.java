@@ -34,7 +34,8 @@ import java.util.List;
  * API Guide</a> for more information on developing a Settings UI.
  */
 public class SettingsActivity extends AppCompatPreferenceActivity {
-
+    public static final String EXTRA_SHOW_FRAGMENT = ":android:show_fragment";
+    public static final String EXTRA_NO_HEADERS = ":android:no_headers";
     /**
      * A preference value change listener that updates the preference's summary
      * to reflect its new value.
@@ -157,6 +158,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
     /**
      * {@inheritDoc}
      */
+
     @Override
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     public void onBuildHeaders(List<Header> target) {

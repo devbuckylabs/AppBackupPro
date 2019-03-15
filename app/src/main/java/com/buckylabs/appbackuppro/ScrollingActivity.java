@@ -3,12 +3,16 @@ package com.buckylabs.appbackuppro;
 import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
+import android.preference.PreferenceActivity;
+import android.preference.PreferenceManager;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DividerItemDecoration;
@@ -46,8 +50,8 @@ public class ScrollingActivity extends AppCompatActivity {
     private MyAdapter adapter;
     private boolean isAllChecked;
     private List<ApplicationInfo> listofApkstoBackup;
-
-
+    private Handler handler;
+    SharedPreferences preferences;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -62,6 +66,8 @@ public class ScrollingActivity extends AppCompatActivity {
         isAllChecked = true;
         apks = new ArrayList<>();
         listofApkstoBackup = new ArrayList<>();
+        handler = new Handler(getMainLooper());
+
         Button backup = findViewById(R.id.backUp);
         recyclerView = findViewById(R.id.recyclerView);
         recyclerView.hasFixedSize();
@@ -72,9 +78,13 @@ public class ScrollingActivity extends AppCompatActivity {
         adapter = new MyAdapter(context, apks);
         recyclerView.setAdapter(adapter);
 
+        preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        boolean isSys = preferences.getBoolean("show_sys_apps_pref", false);
+
+        Log.e("Pref", "" + isSys);
         getStoragePermission();
         createDirectory();
-        getApks(false);
+        getApks(isSys);
 
         backup.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -87,6 +97,26 @@ public class ScrollingActivity extends AppCompatActivity {
 
 
     }
+
+    @Override
+    public void onRestart() {
+        super.onRestart();
+        // SharedPreferences preferences= PreferenceManager.getDefaultSharedPreferences(this);
+        final boolean isSys = preferences.getBoolean("show_sys_apps_pref", false);
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+
+                Log.e("Pref_onRestart", "" + isSys);
+                apks.clear();
+                getApks(isSys);
+                adapter.notifyDataSetChanged();
+            }
+        });
+
+
+    }
+
 
 
     public void backupApks() {
@@ -235,8 +265,11 @@ public class ScrollingActivity extends AppCompatActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
-            Intent i = new Intent(context, SettingsActivity.class);
-            startActivity(i);
+            Intent intent = new Intent(context, SettingsActivity.class);
+            intent.putExtra(PreferenceActivity.EXTRA_SHOW_FRAGMENT, SettingsActivity.GeneralPreferenceFragment.class.getName());
+            intent.putExtra(PreferenceActivity.EXTRA_NO_HEADERS, true);
+
+            startActivity(intent);
             return true;
         }
         if (id == R.id.checkAll) {
